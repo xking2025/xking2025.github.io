@@ -41,6 +41,7 @@
 <body class="bg-light">
 <div class="container py-4">
   <h2 class="text-center mb-3">🌍 国际站商家年度生意规划</h2>
+  <p class="text-center text-muted mb-2">南粤大区SKA专享年度规划工具</p>
   <p class="text-center text-muted mb-4">
     💱 所有金额单位：人民币（RMB），<strong>仅笔单价为美元（USD）</strong>｜汇率：1 USD = 7 RMB
   </p>
@@ -104,14 +105,14 @@
       </div>
     </div>
 
-    <!-- 中间：2026关键假设（新增单商机成本优化滑块） -->
+    <!-- 中间：2026关键假设（笔单价上浮比例上限改为200%） -->
     <div class="col-md-4">
       <div class="card">
         <div class="card-header bg-success text-white">📈 2026关键假设（优化优质客户占比）</div>
         <div class="card-body">
           <div class="param-slider">
             <label>笔单价上浮比例<span class="float-end highlight-number" id="ticketUpsideDisplay">+20.0%</span></label>
-            <input type="range" class="form-range" min="0" max="100" step="1" id="ticketUpsideSlider" value="20" oninput="updateProjection()">
+            <input type="range" class="form-range" min="0" max="200" step="1" id="ticketUpsideSlider" value="20" oninput="updateProjection()">
             <div class="unit-label">因聚焦高价值客户</div>
           </div>
           <div class="mb-3">
