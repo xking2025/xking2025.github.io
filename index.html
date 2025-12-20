@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    <!-- 中间：2026关键假设（笔单价上浮比例上限改为200%） -->
+    <!-- 中间：2026关键假设（新增复购次数上浮） -->
     <div class="col-md-4">
       <div class="card">
         <div class="card-header bg-success text-white">📈 2026关键假设（优化优质客户占比）</div>
@@ -138,7 +138,18 @@
             <input type="number" step="0.1" class="form-control auto-field" id="convRate2026Display" readonly>
           </div>
 
-          <!-- 新增：单商机成本优化滑块 -->
+          <!-- 新增：复购次数上浮比例（0% ~ 300%） -->
+          <div class="param-slider">
+            <label>复购次数上浮比例<span class="float-end highlight-number" id="repeatFreqUpsideDisplay">+50.0%</span></label>
+            <input type="range" class="form-range" min="0" max="300" step="1" id="repeatFreqUpsideSlider" value="50" oninput="updateProjection()">
+            <div class="unit-label">因客户质量提升，复购更频繁</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">2026首年复购次数（次/人）</label>
+            <input type="number" step="0.1" class="form-control auto-field" id="repeatFreq2026Display" readonly>
+          </div>
+
+          <!-- 单商机成本优化滑块 -->
           <div class="param-slider">
             <label>单商机成本优化比例<span class="float-end highlight-number" id="leadCostOptDisplay">-10.0%</span></label>
             <input type="range" class="form-range" min="-50" max="20" step="1" id="leadCostOptSlider" value="-10" oninput="updateProjection()">
@@ -184,9 +195,9 @@
     <h6>💡 规划逻辑说明</h6>
     <ul>
       <li><strong>2025数据由您提供</strong>：销售额、复购率等均为真实经营结果</li>
-      <li><strong>2026增长有依据</strong>：笔单价与转化率 = 2025基准 × (1 + 上浮比例)</li>
+      <li><strong>2026增长有依据</strong>：笔单价、转化率、复购次数 = 2025基准 × (1 + 上浮比例)</li>
       <li><strong>单商机成本可优化</strong>：通过保效产品或运营提效，成本可下降（如 -10%）</li>
-      <li><strong>复购模型延续2025</strong>：复购率与复购次数保持一致</li>
+      <li><strong>复购模型延续2025逻辑</strong>，但复购频次可提升</li>
       <li><strong>仅笔单价用 USD，其余金额统一用 RMB</strong>（汇率=7）</li>
     </ul>
     <p class="mb-0"><strong>✅ 本工具可用于：年度预算制定、团队目标对齐、平台资源申请</strong></p>
@@ -256,29 +267,34 @@
     // 获取上浮比例
     const ticketUpside = parseFloat(document.getElementById('ticketUpsideSlider').value) || 0;
     const convUpside = parseFloat(document.getElementById('convUpsideSlider').value) || 0;
-    const leadCostOpt = parseFloat(document.getElementById('leadCostOptSlider').value) || 0; // 新增
+    const repeatFreqUpside = parseFloat(document.getElementById('repeatFreqUpsideSlider').value) || 0; // ✅ 新增
+    const leadCostOpt = parseFloat(document.getElementById('leadCostOptSlider').value) || 0;
 
     // 计算2026假设值
     const ticket2026USD = ticket2025USD * (1 + ticketUpside / 100);
     const convRate2026 = convRate2025 * (1 + convUpside / 100);
-    const costPerLead2026RMB = costPerLead2025RMB * (1 + leadCostOpt / 100); // 新增：成本优化
+    const repeatFreq2026 = repeatFreq2025 * (1 + repeatFreqUpside / 100); // ✅ 新增
+    const costPerLead2026RMB = costPerLead2025RMB * (1 + leadCostOpt / 100);
 
     // 更新中间面板显示
     document.getElementById('ticketUpsideDisplay').textContent = `+${ticketUpside.toFixed(1)}%`;
     document.getElementById('convUpsideDisplay').textContent = `+${convUpside.toFixed(1)}%`;
+    document.getElementById('repeatFreqUpsideDisplay').textContent = `+${repeatFreqUpside.toFixed(1)}%`; // ✅
     document.getElementById('leadCostOptDisplay').textContent = `${leadCostOpt >= 0 ? '+' : ''}${leadCostOpt.toFixed(1)}%`;
+
     document.getElementById('ticket2026Display').value = ticket2026USD.toFixed(1);
     document.getElementById('convRate2026Display').value = convRate2026.toFixed(1);
+    document.getElementById('repeatFreq2026Display').value = repeatFreq2026.toFixed(1); // ✅
     document.getElementById('costPerLead2026Display').value = costPerLead2026RMB.toFixed(2);
 
     // 2026投入（RMB）
     const spend2026RMB = parseFloat(document.getElementById('spend2026RMB').value) || 525000;
 
     // 推演（全部金额以 RMB 为主）
-    const leads2026 = spend2026RMB / costPerLead2026RMB; // 使用优化后的成本
+    const leads2026 = spend2026RMB / costPerLead2026RMB;
     const firstCustomers2026 = leads2026 * (convRate2026 / 100);
     const firstRevenueRMB = firstCustomers2026 * ticket2026USD * EXCHANGE_RATE;
-    const repeatOrders2026 = firstCustomers2026 * (repeatRatePct2025 / 100) * repeatFreq2025;
+    const repeatOrders2026 = firstCustomers2026 * (repeatRatePct2025 / 100) * repeatFreq2026; // ✅ 使用新复购频次
     const repeatRevenueRMB = repeatOrders2026 * ticket2026USD * EXCHANGE_RATE;
     const totalRevenueRMB = firstRevenueRMB + repeatRevenueRMB;
 
@@ -290,7 +306,7 @@
     document.getElementById('step2').innerHTML = `2. 2026单商机成本 = ¥${costPerLead2025RMB.toFixed(2)} × (1 ${leadCostOpt >= 0 ? '+' : ''}${leadCostOpt.toFixed(1)}%) = <b>¥${costPerLead2026RMB.toFixed(2)}</b><br>&nbsp;&nbsp;&nbsp;&nbsp;2026商机数 = ${spend2026RMB} ÷ ¥${costPerLead2026RMB.toFixed(2)} = <b>${Math.round(leads2026)}</b>`;
     document.getElementById('step3').innerHTML = `3. 2026转化率 = ${convRate2025.toFixed(1)}% × (1 + ${convUpside}%) = <b>${convRate2026.toFixed(1)}%</b><br>&nbsp;&nbsp;&nbsp;&nbsp;首单客户 = ${Math.round(leads2026)} × ${convRate2026.toFixed(1)}% = <b>${Math.round(firstCustomers2026)}</b>`;
     document.getElementById('step4').innerHTML = `4. 2026笔单价 = <b>$${ticket2026USD.toFixed(1)}</b>（USD）<br>&nbsp;&nbsp;&nbsp;&nbsp;首单收入 = ${Math.round(firstCustomers2026)} × $${ticket2026USD.toFixed(1)} × 7 = <b>¥${Math.round(firstRevenueRMB).toLocaleString()}</b>`;
-    document.getElementById('step5').innerHTML = `5. 复购笔数 = ${Math.round(firstCustomers2026)} × ${repeatRatePct2025}% × ${repeatFreq2025} = ${Math.round(repeatOrders2026)}<br>&nbsp;&nbsp;&nbsp;&nbsp;复购收入 = ${Math.round(repeatOrders2026)} × $${ticket2026USD.toFixed(1)} × 7 = <b>¥${Math.round(repeatRevenueRMB).toLocaleString()}</b>`;
+    document.getElementById('step5').innerHTML = `5. 2026复购次数 = ${repeatFreq2025} × (1 + ${repeatFreqUpside}%) = <b>${repeatFreq2026.toFixed(1)}</b> 次/人<br>&nbsp;&nbsp;&nbsp;&nbsp;复购笔数 = ${Math.round(firstCustomers2026)} × ${repeatRatePct2025}% × ${repeatFreq2026.toFixed(1)} = ${Math.round(repeatOrders2026)}<br>&nbsp;&nbsp;&nbsp;&nbsp;复购收入 = ${Math.round(repeatOrders2026)} × $${ticket2026USD.toFixed(1)} × 7 = <b>¥${Math.round(repeatRevenueRMB).toLocaleString()}</b>`;
     document.getElementById('step6').innerHTML = `6. 总销售额(RMB) = ¥${Math.round(firstRevenueRMB).toLocaleString()} + ¥${Math.round(repeatRevenueRMB).toLocaleString()} = <b>¥${Math.round(totalRevenueRMB).toLocaleString()}</b>`;
   }
 
@@ -307,6 +323,10 @@
     document.getElementById('convUpsideDisplay').textContent = '+' + this.value + '%';
     updateProjection();
   });
+  document.getElementById('repeatFreqUpsideSlider').addEventListener('input', function() { // ✅
+    document.getElementById('repeatFreqUpsideDisplay').textContent = '+' + this.value + '%';
+    updateProjection();
+  });
   document.getElementById('leadCostOptSlider').addEventListener('input', function() {
     const val = parseFloat(this.value);
     document.getElementById('leadCostOptDisplay').textContent = (val >= 0 ? '+' : '') + val + '%';
@@ -315,3 +335,5 @@
 </script>
 </body>
 </html>
+
+
